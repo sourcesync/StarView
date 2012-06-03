@@ -1,0 +1,43 @@
+<html>
+<head>
+
+<script>
+
+var stuff = [ {'a':[ {'b':[] } ] } ];
+alert(stuff);
+var level = 0;
+
+function create_control(node,level)
+{
+	//alert( Object.prototype.toString.call(node) );
+	alert(level + " " + node + " " + Object.prototype.toString.call(node) );
+
+	if ( Object.prototype.toString.call( node ) == '[object Array]'	)
+	{
+		alert('is array');
+		for (var i = 0; i < node.length; i++) 
+		{
+			child = node[i];
+			alert( Object.prototype.toString.call(child) );
+		}	
+	}
+}
+
+create_control(stuff,1);
+
+</script>
+
+</head>
+<body>
+	<div id="management_c" style="visibility:visible;" >
+                      <div style="position:relative;left:50px">
+                       <div style="position:relative;">Economy policy:</div>    
+                       <div style="position:relative;left:50px;"><a href="#" onclick="alert('hi!');" >+</a><a href="#">[curtail on]</a></div>    
+                       <div style="position:relative;left:50px;">[entail on]</div>
+                       <div style="position:relative;">Premium policy:</div>    
+                       <div style="position:relative;left:50px;">[curtail off]</div>    
+                       <div style="position:relative;left:50px;">[entail on]</div>
+            </div>
+</div>
+</body>
+</html>
