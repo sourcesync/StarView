@@ -66,7 +66,6 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 		//
 		function init_tree()
 		{
-			alert('init!');
 			// TODO: RETRIEVE ACTUAL PATH STRINGS FROM SERVER...
 
 			var lines = [ "gps1,bps1,pss1,sss1,cp1,gps2,bps2,pss2,sss2,cp2",
@@ -122,8 +121,6 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 		//
                 function setup_stuff()
                 {
-			alert('setup!');
-
 			//	initialize starview tree control...
                         stree = new starview_tree('basicTree',init_tree, click_tree);
 
