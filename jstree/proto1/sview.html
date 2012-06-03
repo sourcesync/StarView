@@ -1,0 +1,147 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>StarView Tree - Demo</title>
+
+	<!--
+	----	JQUERY JS LIBRARIES...
+	--->
+	<script type="text/javascript" src="../_lib/jquery.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.cookie.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="../jquery.jstree.js"></script>
+
+	<!--
+	----	OSM JS LIBRARY...
+	--->
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+
+	<!--
+	----	STARVIEW JS LIBRARY... 
+	--->
+	<script type="text/javascript" src="starview.js"></script>
+
+	<!--
+	----    INLINE style...
+	--->
+        <style type="text/css">
+                #basicTree {
+                        position: absolute;
+                        width: 500px;
+                        height: 200px;
+                        left: 0px;
+                        top: 0px;
+                        margin: 0;
+                        background-color:green;
+                }
+
+                #basicMap {
+                        position: absolute;
+                        width: 500px; 
+                        height: 200px;
+                        left: 0px;
+                        top: 300px;
+                        margin: 0;
+                        background-color:red;
+                }
+        </style>
+       
+	<!---
+	-----	ALL THE SCRIPT STUFF
+	----> 
+	<script> 
+		//
+		//	GLOBAL variables...
+		//
+		var LON = 13.41;
+                var LAT = 52.52;
+		var map = null;
+		var stree = null;
+
+		//
+		//	CALLBACK for initializing starview tree object...
+		//
+		function init_tree()
+		{
+			alert('init!');
+			// TODO: RETRIEVE ACTUAL PATH STRINGS FROM SERVER...
+
+			var lines = [ "gps1,bps1,pss1,sss1,cp1,gps2,bps2,pss2,sss2,cp2",
+              			      "gps1,bps1,pss1,sss1,cp1,gps2,bps2,pss2,sss2,cp3" ];
+			return lines;
+		}
+
+		//
+		//	CALLBACK for starview tree object click event...
+		//
+		function click_tree(path)
+		{
+			// TODO: DO SOMETHING WITH THIS PATH...
+			
+			alert("click_path=" + path);
+
+			//
+			//  FOR NOW, CHANGE MAP VIEW BY INCREMENTS...
+			//
+			LON = LON + 0.0001;
+			LAT = LAT + 0.0001;
+			var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+			var position       = new OpenLayers.LonLat(LON, LAT).transform( fromProjection, toProjection);
+                        var zoom           = 15;
+                        map.setCenter(position, zoom );
+		}
+
+		//	
+		//	CALLBACK to init map stuff...
+		//
+      		function init_map() 
+		{
+			//	initialize a lat long...
+			LON = 13.41;
+			LAT = 52.52;
+
+			//	create an osm map...
+        		map = new OpenLayers.Map("basicMap");
+        		var mapnik         = new OpenLayers.Layer.OSM();
+        		var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+        		var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+        		var position       = new OpenLayers.LonLat(LON,LAT).transform( fromProjection, toProjection);
+        		var zoom           = 15;
+
+			//	show at initial position...
+        		map.addLayer(mapnik);
+        		map.setCenter(position, zoom );
+      		}
+
+		//
+                //      CALLBACK for setting up everything - map and control - should be invoked after window loads via window.onload event 
+		//
+                function setup_stuff()
+                {
+			alert('setup!');
+
+			//	initialize starview tree control...
+                        stree = new starview_tree('basicTree',init_tree, click_tree);
+
+			//	initialize OSM map stuff...
+			init_map();
+                }
+
+	        //      make sure everything gets called after window loads...
+                window.onload = setup_stuff;
+
+	</script>
+</head>
+
+<body >
+
+<div id="basicTree"></div>
+
+<div id="basicMap"></div>
+
+</body>
+</html>

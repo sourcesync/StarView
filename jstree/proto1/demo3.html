@@ -1,0 +1,171 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>jsTree v.1.0 - Demo</title>
+	<script type="text/javascript" src="../_lib/jquery.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.cookie.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="../jquery.jstree.js"></script>
+	<link type="text/css" rel="stylesheet" href="../_docs/syntax/!style.css"/>
+	<link type="text/css" rel="stylesheet" href="../_docs/!style.css"/>
+	<script type="text/javascript" src="../_docs/syntax/!script.js"></script>
+
+	<script>
+
+		var lines = [ "gps1,bps1,pss1,sss1,cp1,gps1,bps1,pss1,sss1,cp2",
+				"gps1,bps1,pss1,sss1,cp1,gps1,bps1,pss1,sss1,cp3" ];
+		
+		/*var lines = [ "gps1,cp1,4,5", "gps1,cp2,4,6" ];*/
+
+		var RDATA = {};
+		var FDATA = {};
+
+		function datify(path)
+		{
+			var dct = RDATA;
+			//	iterate nodes in path...
+			for (var j=0;j<path.length;j++)
+			{
+				key = path[j];
+				if ( key in dct )
+				{
+					// this node exists...
+					dct = dct[key];
+					continue;
+				}
+				else
+				{
+					dct[key] = {}
+					dct = dct[key];
+				}
+			}
+		}
+
+		function populate_from_strings()
+		{
+			for (var i=0;i<lines.length;i++)
+			{
+				var line = lines[i];
+				var parts = line.split(",");
+				alert('DATIFY ' + parts);
+				datify( parts );
+			}
+		}
+
+		populate_from_strings();
+
+		console.log( RDATA );
+
+		alert('done');
+
+		function _recurse(dct, parent, path)
+		{
+			var ul = document.createElement('ul');
+			ul.id = "ul__" + path;
+                        parent.appendChild(ul)
+
+			for (var key in dct) 
+			{
+	                        var li = document.createElement('li');
+                        	li.id = path + "_" + key;
+                        	li.className="jstree-open";
+                        	ul.appendChild(li)
+
+				var a = document.createElement('a');
+                        	a.setAttribute('href','#');
+                        	a.innerHTML = key;
+                        	li.appendChild(a);
+
+   				var obj = dct[key];
+			
+				//if (obj.hasOwnProperty('child'))
+				if ( Object.prototype.toString.call( obj ) == "[object Object]" )
+				{
+					_recurse( obj, li, path + "_" + key );
+				}
+			}
+		}
+
+		function treeify()
+		{
+			var body = document.getElementById('demo_body');
+			var d = document.createElement('div');
+			d.id = "demo3";
+			d.className = "demo";
+			d.style = "height:100px;";
+			body.appendChild(d);
+		
+			_recurse( RDATA, d, "");
+	
+			$(function () {
+        			$("#demo3")
+                			.jstree({ "plugins" : ["themes","html_data","ui"] })
+                			// 1) if using the UI plugin bind to select_node
+                			.bind("select_node.jstree", function (event, data) {
+                        		// `data.rslt.obj` is the jquery extended node that was clicked
+                        		alert(data.rslt.obj.attr("id"));
+                		})
+                		// 2) if not using the UI plugin - the Anchor tags work as expected
+                		//    so if the anchor has a HREF attirbute - the page will be changed
+                		//    you can actually prevent the default, etc (normal jquery usage)
+                		.delegate("a", "click", function (event, data) { event.preventDefault(); })
+			});
+
+			alert('done yo');
+
+		}
+
+		window.onload = treeify;
+
+
+
+
+	</script>
+</head>
+
+<body id="demo_body">
+
+<!--
+<div id="demo3" class="demo" style="height:100px;">
+	<ul>
+		<li id="shtml_1" class="jstree-open">
+			<a href="#">Root node 1</a>
+			<ul>
+				<li id="shtml_2">
+					<a href="#">Child node 1</a>
+				</li>
+				<li id="shtml_3">
+					<a href="#">Child node 2</a>
+				</li>
+			</ul>
+		</li>
+		<li id="shtml_4">
+			<a href="#">Root node 2</a>
+		</li>
+	</ul>
+</div>
+-->
+
+<!--
+<script type="text/javascript" class="source below">
+$(function () {
+	$("#demo3")
+		.jstree({ "plugins" : ["themes","html_data","ui"] })
+		// 1) if using the UI plugin bind to select_node
+		.bind("select_node.jstree", function (event, data) { 
+			// `data.rslt.obj` is the jquery extended node that was clicked
+			alert(data.rslt.obj.attr("id"));
+		})
+		// 2) if not using the UI plugin - the Anchor tags work as expected
+		//    so if the anchor has a HREF attirbute - the page will be changed
+		//    you can actually prevent the default, etc (normal jquery usage)
+		.delegate("a", "click", function (event, data) { event.preventDefault(); })
+});
+</script>
+-->
+
+</body>
+</html>
