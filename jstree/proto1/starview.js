@@ -98,7 +98,10 @@ function _treeify(oo)
                       		//    so if the anchor has a HREF attirbute - the page will be changed
                       		//    you can actually prevent the default, etc (normal jquery usage)
                       		.delegate("a", "click", function (event, data) 
-							{ event.preventDefault(); })
+							{ event.preventDefault(); });
+
+				setTimeout(function () { $("#starview_tree").jstree("close_all"); }, 1);
+
 
 
         });
