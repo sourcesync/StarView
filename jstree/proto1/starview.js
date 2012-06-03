@@ -68,26 +68,41 @@ function _treeify(oo)
 	var parent = document.getElementById(oo.parent);
         var d = document.createElement('div');
         d.id = "starview_tree";
-        //d.className = "demo";
-        //d.style = "height:100px;";
         parent.appendChild(d);
 
         _recurse( oo.RDATA, d, "");
 
         $(function () {
                           $("#starview_tree")
-                               .jstree({ "plugins" : ["themes","html_data","ui"] })
-                               // 1) if using the UI plugin bind to select_node
-                               .bind("select_node.jstree", function (event, data) {
-                               // `data.rslt.obj` is the jquery extended node that was clicked
-                               oo.click(data.rslt.obj.attr("id"));
-                               //alert(data.rslt.obj.attr("id"));
-                      })
-                      // 2) if not using the UI plugin - the Anchor tags work as expected
-                      //    so if the anchor has a HREF attirbute - the page will be changed
-                      //    you can actually prevent the default, etc (normal jquery usage)
-                      .delegate("a", "click", function (event, data) { event.preventDefault(); })
+                               .jstree({
+					"themes" : {
+            						"theme" : "classic",
+            						"dots" : false,
+            						"icons" : false
+        					   },
+					"core" : {
+						"initially_open":[]
+						},
+					"plugins" : ["core","themes","html_data","ui"] })
+                               
+				// 1) if using the UI plugin bind to select_node
+                               .bind("select_node.jstree", 
+					function (event, data) 
+					{
+                               			// `data.rslt.obj` is the jquery extended node that was clicked
+                               			oo.click(data.rslt.obj.attr("id"));
+                               			//alert(data.rslt.obj.attr("id"));
+                      			})
+
+                      		// 2) if not using the UI plugin - the Anchor tags work as expected
+                      		//    so if the anchor has a HREF attirbute - the page will be changed
+                      		//    you can actually prevent the default, etc (normal jquery usage)
+                      		.delegate("a", "click", function (event, data) 
+							{ event.preventDefault(); })
+
+
         });
+		
          
 }
 
