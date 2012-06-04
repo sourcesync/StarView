@@ -28,8 +28,9 @@ function _datify(oo)
 	var lines = oo.strings;
 	for (var i=0;i<lines.length;i++)
         {
-        	var line = lines[i];
-                var parts = line.split(",");
+        	//var line = lines[i];
+                //var parts = line.split(",");
+		var parts = lines[i];
                 _datify_one_path( oo, parts );
         }
 }
@@ -44,7 +45,10 @@ function _recurse(dct, parent, path)
         for (var key in dct)
         {
         	var li = document.createElement('li');
-                li.id = path + "_" + key;
+		var strid = path + "_" + key;
+		if (path=="")
+                	strid = key;
+		li.id = strid;
                 li.className="jstree-open";
                 ul.appendChild(li)
 
@@ -57,7 +61,7 @@ function _recurse(dct, parent, path)
 
                 if ( Object.prototype.toString.call( obj ) == "[object Object]" )
                 {
-                	_recurse( obj, li, path + "_" + key );
+                	_recurse( obj, li, strid );
                 }
         }
 }
@@ -90,7 +94,14 @@ function _treeify(oo)
 					function (event, data) 
 					{
                                			// `data.rslt.obj` is the jquery extended node that was clicked
-                               			oo.click(data.rslt.obj.attr("id"));
+
+						//	get the path of the node...
+                               			var strid = data.rslt.obj.attr("id");
+						var path = strid.split("_");
+				
+						//	invoke the click callback...	
+                               			oo.click(path);
+
                                			//alert(data.rslt.obj.attr("id"));
                       			})
 
