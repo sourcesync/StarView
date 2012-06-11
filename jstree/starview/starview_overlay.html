@@ -1,0 +1,311 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>StarView Tree - Demo</title>
+
+	<!--
+	----	JQUERY JS LIBRARIES...
+	--->
+	<script type="text/javascript" src="../_lib/jquery.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.cookie.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="../jquery.jstree.js"></script>
+
+	<!--
+	----	OSM JS LIBRARY...
+	--->
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+
+	<!--
+	----	STARVIEW JS LIBRARY... 
+	--->
+	<script type="text/javascript" src="starview.js"></script>
+
+	<!--
+	----    INLINE style...
+	--->
+        <style type="text/css">
+                #basicTree {
+                        position: absolute;
+                        width: 500px;
+                        height: 200px;
+                        left: 0px;
+                        top: 0px;
+                        margin: 0;
+                        background-color:green;
+                }
+
+                #basicMap {
+                        position: absolute;
+                        width: 500px; 
+                        height: 200px;
+                        left: 0px;
+                        top: 300px;
+                        margin: 0;
+                        background-color:white;
+			z-index:1;
+                }
+		#basicOverlay {
+                        position: absolute;
+                        left: 100px;
+                        top: 300px;
+                        margin: 0;
+                        background-color:transparent;
+			z-index:2;
+		}
+        </style>
+       
+	<!---
+	-----	ALL THE SCRIPT STUFF
+	----> 
+	<script> 
+		//
+		//	GLOBAL variables...
+		//
+		var LON = 13.41;
+                var LAT = 52.52;
+		var PLON = 13.41;
+                var PLAT = 52.52;
+		var map = null;
+		var stree = null;
+		var CUR_EXTENT = null;
+		var INIT_EXTENT = null;
+
+		//
+		//	CALLBACK for initializing starview tree object...
+		//
+		function init_tree()
+		{
+			// TODO: RETRIEVE ACTUAL PATH STRINGS FROM SERVER...
+			var lines = [ ["gps1","bps1","pss1","sss1","cp1","gps2","bps2","pss2","sss2","cp2"],
+              			      ["gps1","bps1","pss1","sss1","cp1","gps2","bps2","pss2","sss2","cp3" ] ];
+			return lines;
+		}
+
+		//
+		//	CALLBACK for starview tree object click event...
+		//
+		function click_tree(path)
+		{
+			// TODO: DO SOMETHING WITH THIS PATH...
+			
+			//
+			//  FOR NOW, CHANGE MAP VIEW BY INCREMENTS...
+			//
+			var leaf = path[ path.length - 1];
+			alert(leaf);
+			if (leaf=="gps1")
+			{
+				//LON = LON;
+				//LAT = LAT;
+				//var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        	//var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+				//var position       = new OpenLayers.LonLat(LON, LAT).transform( fromProjection, toProjection);
+                        	//var zoom           = 15;
+                        	//map.setCenter(position, zoom );
+
+				var zoom = map.getZoomForExtent(INIT_EXTENT, true);
+				var center = INIT_EXTENT.getCenterLonLat();
+                        	map.setCenter(center, zoom );
+			}
+			else if (leaf=="bps1")
+			{
+				//LON = LON + 0.1;
+				//LAT = LAT + 0.1;
+                                //var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                                //var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+                                //var position       = new OpenLayers.LonLat(LON, LAT).transform( fromProjection, toProjection);
+                                //var zoom           = 15;
+                                //map.setCenter(position, zoom );
+
+				var dx = INIT_EXTENT.right - INIT_EXTENT.left;
+				var dy = INIT_EXTENT.top - INIT_EXTENT.bottom;
+				var nr = INIT_EXTENT.left + dx/2;
+				var nt = INIT_EXTENT.bottom + dy/2;
+				var nextent = new OpenLayers.Bounds( INIT_EXTENT.left, INIT_EXTENT.bottom, nr, nt);
+                                var zoom = map.getZoomForExtent(nextent, true);
+                                var center = nextent.getCenterLonLat();
+                                map.setCenter(center, zoom );
+			}
+
+
+			// get new extents...
+                        CUR_EXTENT = map.getExtent();
+
+		}
+
+		//	
+		//	CALLBACK to init map stuff...
+		//
+      		function init_map() 
+		{
+			//	initialize a lat long...
+			LON = 13.41;
+			LAT = 52.52;
+
+			//	create an osm map...
+        		map = new OpenLayers.Map("basicMap");
+        		var mapnik         = new OpenLayers.Layer.OSM();
+        		var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+        		var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+        		var position       = new OpenLayers.LonLat(LON,LAT).transform( fromProjection, toProjection);
+        		var zoom           = 15;
+
+			//	show at initial position...
+        		map.addLayer(mapnik);
+        		map.setCenter(position, zoom );
+
+			//	get initial extents...
+			CUR_EXTENT = map.getExtent();
+			INIT_EXTENT = map.getExtent();
+      		}
+
+		//	
+		//	STUFF for canvas...
+		//
+		var layer1;
+		var layer2;
+		var layer3;  
+		var ctx1;
+		var ctx2;
+		var ctx3;
+		var x = 400;
+		var y = 100;
+		var dx = 2;
+		var dy = 4;
+		var WIDTH = 400;
+		var HEIGHT = 200; 
+		var city = new Image();
+
+		function init_canvas() {
+  			city.src ="city.png";
+  			layer1 = document.getElementById("basicOverlay");
+  			ctx1 = layer1.getContext("2d");
+  			//layer2 = document.getElementById("layer2");
+  			//ctx2 = layer2.getContext("2d");
+  			//layer3 = document.getElementById("layer3");
+  			//ctx3 = layer3.getContext("2d");
+  			setInterval(drawAll, 20);
+
+		}
+
+		function drawPoint() {
+
+			CUR_EXTENT = map.getExtent();
+
+			var diffLon = CUR_EXTENT.right - CUR_EXTENT.left;
+			var diffLat = CUR_EXTENT.top - CUR_EXTENT.bottom;
+			var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+                        var position       = new OpenLayers.LonLat(PLON, PLAT).transform( fromProjection, toProjection);
+			var nx = (position.lon - CUR_EXTENT.left)/diffLon;
+			var ny = (position.lat - CUR_EXTENT.bottom)/diffLat;
+
+			var px = nx * (WIDTH + 100 );
+			var py = ny * HEIGHT;
+                        ctx1.fillStyle = "#444444";
+                        ctx1.beginPath();
+                        ctx1.arc(px - 100, HEIGHT -  py, 10, 0, Math.PI*2, true);
+                        ctx1.closePath();
+                        ctx1.fill();
+	
+                       	/* 
+			var diffLon = CUR_EXTENT.right - CUR_EXTENT.left;
+                        var diffLat = CUR_EXTENT.top - CUR_EXTENT.bottom;
+                        var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+                        var position       = new OpenLayers.LonLat(PLON, PLAT).transform( fromProjection, toProjection);
+                        var nx = (position.lon - CUR_EXTENT.left)/diffLon;
+                        var ny = (position.lat - CUR_EXTENT.bottom)/diffLat;
+	
+                        var px = nx * (WIDTH + 100 );
+                        var py = ny * HEIGHT;
+                        ctx1.fillStyle = "#444444";
+                        ctx1.beginPath();
+                        ctx1.arc(px - 100, HEIGHT -  py, 10, 0, Math.PI*2, true);
+                        ctx1.closePath();
+                        ctx1.fill();
+			*/
+	
+		}
+
+		function drawAll() {
+  			ctx1.clearRect(0, 0, WIDTH, HEIGHT);
+  			//draw1();
+			drawPoint();
+  			//draw2();  
+  			//draw3();
+		}
+
+		function draw1() {
+  			//ctx1.fillStyle = "#FAF7F8";
+  			//ctx1.beginPath();
+  			//ctx1.rect(0,0,WIDTH,HEIGHT);
+  			//ctx1.closePath();
+  			//ctx1.fill();
+  			ctx1.fillStyle = "#444444";
+  			ctx1.beginPath();
+  			ctx1.arc(x, y, 10, 0, Math.PI*2, true);
+  			ctx1.closePath();
+  			ctx1.fill();
+
+  			if (x + dx > WIDTH || x + dx < 0)
+    				dx = -dx;
+  			if (y + dy > HEIGHT || y + dy < 0)
+    				dy = -dy;
+
+  			x += dx;
+  			y += dy;
+		}
+
+		function draw2() {
+  			ctx1.clearRect(0, 0, WIDTH, HEIGHT);
+  			ctx1.drawImage(city, 0, 0);   
+		}
+
+		function draw3() {
+  			ctx3.clearRect(0, 0, WIDTH, HEIGHT);
+  			ctx3.fillStyle = "#444444";
+  			ctx3.save();
+  			ctx3.translate(200,200);
+  			ctx3.rotate(x/20); 
+  			ctx3.fillRect(-15, -15, 30, 30);
+  			ctx3.restore();                  
+		}
+
+                //
+                //      CALLBACK for setting up everything - map and control - should be invoked after window loads via window.onload event
+                //
+                function setup_stuff()
+                {
+                        //      initialize starview tree control...
+                        stree = new starview_tree('basicTree',init_tree, click_tree);
+
+                        //      initialize OSM map stuff...
+                        init_map();
+
+			//	initialize Canvas stuff...
+			init_canvas();
+                }
+
+
+	        //      make sure everything gets called after window loads...
+                window.onload = setup_stuff;
+
+	</script>
+</head>
+
+<body >
+
+<div id="basicTree"></div>
+
+<div id="basicMap">
+</div>
+
+<canvas id="basicOverlay" width="400px" height="200px" />
+
+</body>
+</html>

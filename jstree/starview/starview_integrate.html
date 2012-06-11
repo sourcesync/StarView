@@ -1,0 +1,358 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>StarView Tree - Demo</title>
+
+	<!--
+	----	JQUERY JS LIBRARIES...
+	--->
+	<script type="text/javascript" src="../_lib/jquery.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.cookie.js"></script>
+	<script type="text/javascript" src="../_lib/jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="../jquery.jstree.js"></script>
+
+	<!--
+	----	OSM JS LIBRARY...
+	--->
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+
+	<!--
+	----	STARVIEW JS LIBRARY... 
+	--->
+	<script type="text/javascript" src="starview.js"></script>
+
+	<!--
+	----    INLINE style...
+	--->
+        <style type="text/css">
+                #basicTree {
+                        position: absolute;
+                        width: 500px;
+                        height: 200px;
+                        left: 0px;
+                        top: 0px;
+                        margin: 0;
+                        background-color:green;
+                }
+
+                #basicMap {
+                        position: absolute;
+                        width: 500px; 
+                        height: 200px;
+                        left: 0px;
+                        top: 300px;
+                        margin: 0;
+                        background-color:white;
+			z-index:1;
+                }
+		#basicOverlay {
+                        position: absolute;
+                        left: 100px;
+                        top: 300px;
+                        margin: 0;
+                        background-color:transparent;
+			z-index:2;
+		}
+        </style>
+       
+	<!---
+	-----	ALL THE SCRIPT STUFF
+	----> 
+	<script> 
+		//
+		//	GLOBAL variables...
+		//
+
+		//	initial view center
+		var INIT_LON = 13.41;
+                var INIT_LAT = 52.52;
+
+		//	initial zoom...
+		var INIT_ZOOM = 13;
+
+		//	the map control...
+		var map = null;
+
+		//	the tree control...
+		var stree = null;
+
+		// 	stuff for tracking/calculating right map view...
+		var CUR_EXTENT = null;
+		var INIT_EXTENT = null;
+
+		//	some global data...
+		var NCOORDS = null;
+		var GCOORDS = null;
+		var STATIONS = null;
+
+		//
+		//	CALLBACK for initializing starview tree object...
+		//
+		function init_tree()
+		{
+			// TODO: RETRIEVE ACTA UAL PATH STRINGS FROM SERVER...
+
+			// list of list of tree paths...
+			var paths = [ ["gsp0","bsp0","pss0","sss0","cp3"], 
+					["gsp0","bsp0","pss0","cp2"],
+					["gsp0","bsp0","cp1"],
+					["gsp0", "cp0" ] ];
+
+			//  return the paths to the tree control...
+			return paths;
+		}
+
+		//
+		//	CALLBACK for starview tree object click event...
+		//
+		function click_tree(path)
+		{
+			// TODO: DO SOMETHING WITH THIS PATH...
+			
+			//
+			//  FOR NOW, CHANGE MAP VIEW BY INCREMENTS...
+			//
+			var leaf = path[ path.length - 1];
+
+			//  GET ITS COORDS...
+			var cds = GCOORDS[leaf];
+			if ((cds!=null)&&(cds!=undefined))
+			{
+				// INTERNAL NODE CHANGES THE VIEW...
+				if ( cds.length == 4 )
+				{
+					//	CONVERT NORMALIZED COORDS TO NEW CENTER AND ZOOM FOR MAP...
+					//	NOTE, IT DEPENDS ON PROPERLY INITIALIZING INIT EXTENTS OF MAP
+
+					var nl = cds[0];
+					var nr = cds[2];
+					var nb = cds[1];
+					var nt = cds[3];
+					
+					var nextent = new OpenLayers.Bounds( nl, nb, nr, nt);
+
+                                	var zoom = map.getZoomForExtent(nextent, true);
+                                	var center = nextent.getCenterLonLat();
+                                	map.setCenter(center, zoom );
+			
+					// get new extents...
+                        		CUR_EXTENT = map.getExtent();
+				}
+			}
+
+		}
+
+		//	
+		//	CALLBACK to init map stuff...
+		//
+      		function init_map() 
+		{
+			//	create an osm map...
+        		map = new OpenLayers.Map("basicMap");
+        		var mapnik         = new OpenLayers.Layer.OSM();
+        		var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+        		var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+        		var position       = new OpenLayers.LonLat(INIT_LON,INIT_LAT).transform( fromProjection, toProjection);
+        		var zoom           = INIT_ZOOM;
+
+			//	show at initial position...
+        		map.addLayer(mapnik);
+        		map.setCenter(position, zoom );
+
+			//	get initial extents...
+			CUR_EXTENT = map.getExtent();
+			INIT_EXTENT = map.getExtent();
+      		}
+
+		//	
+		//	STUFF for canvas...
+		//
+		var layer1;
+		var layer2;
+		var layer3;  
+		var ctx1;
+		var ctx2;
+		var ctx3;
+		var x = 400;
+		var y = 100;
+		var dx = 2;
+		var dy = 4;
+		var WIDTH = 400;
+		var HEIGHT = 200; 
+		var city = new Image();
+
+		function init_canvas() {
+  			layer1 = document.getElementById("basicOverlay");
+  			ctx1 = layer1.getContext("2d");
+  			setInterval(drawAll, 20);
+		}
+
+		function drawPoints() {
+
+			//	get current extents and project...
+			CUR_EXTENT = map.getExtent();
+			var diffLon = CUR_EXTENT.right - CUR_EXTENT.left;
+			var diffLat = CUR_EXTENT.top - CUR_EXTENT.bottom;
+			var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+
+
+			//	iterate stations...
+			for (var i=0;i< STATIONS.length;i++)
+			{
+				var station = STATIONS[i];
+
+				//	get its map coords...
+				var cds = GCOORDS[station];
+
+				//	compute normalized coords...
+                        	//var position       = new OpenLayers.LonLat(cds[0], cds[1]).transform( fromProjection, toProjection);
+				var nx = (cds[0] - CUR_EXTENT.left)/diffLon;
+				var ny = (cds[1] - CUR_EXTENT.bottom)/diffLat;
+
+				var px = nx * (WIDTH + 100 ); // note, adjust for the fact overlay is not same size as map...
+				var py = ny * HEIGHT;
+				if (i==0)
+                        		ctx1.fillStyle = "#FF0000";
+				else if (i==1)
+                        		ctx1.fillStyle = "#00FF00";
+				else if (i==2)
+                        		ctx1.fillStyle = "#0000FF";
+				else
+                        		ctx1.fillStyle = "#444444";
+                        	ctx1.beginPath();
+				var dx = px - 100;	
+				var dy = HEIGHT - py;
+                        	ctx1.arc(dx, dy, 10, 0, Math.PI*2, true);
+				
+                        	ctx1.closePath();
+                        	ctx1.fill();
+			}	
+	
+		}
+
+		function drawAll() {
+  			ctx1.clearRect(0, 0, WIDTH, HEIGHT);
+  			//draw1();
+			drawPoints();
+		}
+
+		function draw1() {
+  			ctx1.fillStyle = "#444444";
+  			ctx1.beginPath();
+  			ctx1.arc(x, y, 10, 0, Math.PI*2, true);
+  			ctx1.closePath();
+  			ctx1.fill();
+
+  			if (x + dx > WIDTH || x + dx < 0)
+    				dx = -dx;
+  			if (y + dy > HEIGHT || y + dy < 0)
+    				dy = -dy;
+
+  			x += dx;
+  			y += dy;
+		}
+
+		function convert_to_map_coords( coords )
+		{
+                        //      get current extents and project...
+                        var diffLon = INIT_EXTENT.right - INIT_EXTENT.left;
+                        var diffLat = INIT_EXTENT.top - INIT_EXTENT.bottom;
+                        var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+                        var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+			
+			var gcoords = {};
+
+                        //      iterate all keys (regions or stations) in the coords dictionary...
+                        for (var prop in coords)
+                        {
+                                //      get its normalized coords...
+                                var cds = coords[prop];
+			
+				var gcoord = [];
+	
+				//	convert first...
+                               	var lon = INIT_EXTENT.left + diffLon*cds[0];
+                               	var lat = INIT_EXTENT.bottom + diffLat*(1-cds[1]);
+				gcoord[0] = lon;
+				gcoord[1] = lat;
+	
+				//	convert second, if present (regions, not stations)...
+				if (cds.length==4)
+				{
+                               		lon = INIT_EXTENT.left + diffLon*cds[2];
+                               		lat = INIT_EXTENT.bottom + diffLat*(1-cds[3]);
+					gcoord[2] = lon;
+					gcoord[3] = lat;
+				}
+
+				//	insert converted map coords into new gcoords dictionary...
+				gcoords[prop] = gcoord;
+
+			}
+		
+			return gcoords;	
+
+		}
+
+		function init_data()
+		{
+                        //  initialize global lookup of regions and station normalized coords
+                        //  notice that regions have 4 coords and stations have 2 coords...
+                        NCOORDS = { "gsp0":[0,0,1,1],
+                                "bsp0":[1-0.5,0,1.0,0.5],
+                                "pss0":[1-0.25,0,1.0,0.25],
+                                "sss0":[1-0.125,0,1.0,0.125],
+                                "cp3":[1-0.0625,0.0625],
+                                "cp2":[1-0.125,0.125],
+                                "cp1":[1-0.25,0.25],
+                                "cp0":[1-0.5,0.5] }
+
+			// convert normalized to map coords...
+			GCOORDS = convert_to_map_coords( NCOORDS );
+
+                        //  initiailize global list of station names only..
+                        STATIONS = [ "cp0" ,"cp1", "cp2" ,"cp3" ];
+
+		}
+
+                //
+                //      CALLBACK for setting up everything - map and control - should be invoked after window loads via window.onload event
+                //
+                function setup_stuff()
+                {
+                        //      initialize starview tree control...
+                        stree = new starview_tree('basicTree',init_tree, click_tree);
+
+                        //      initialize OSM map stuff...
+                        init_map();
+
+			//	initialize Canvas stuff...
+			init_canvas();
+
+
+			init_data();
+
+                }
+
+
+	        //      make sure everything gets called after window loads...
+                window.onload = setup_stuff;
+
+	</script>
+</head>
+
+<body >
+
+<div id="basicTree"></div>
+
+<div id="basicMap">
+</div>
+
+<canvas id="basicOverlay" width="400px" height="200px" />
+
+</body>
+</html>
